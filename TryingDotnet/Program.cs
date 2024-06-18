@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using TryingDotnet.DataAccess.Migrations;
 using TryingDotnet.DI;
 using FluentMigrator.Runner;
@@ -6,7 +7,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -23,6 +28,8 @@ builder.Services.AddFluentMigratorCore()
 //builder.Services.AddLogging(lb => lb.AddFluentMigratorConsole());
 builder.Services.RegisterDataAccess(builder.Configuration);
 builder.Services.RegisterEvents();
+
+
 
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
@@ -48,3 +55,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class MyProgram;

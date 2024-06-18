@@ -2,30 +2,36 @@ using System.Text.Json.Serialization;
 
 namespace TryingDotnet.Controllers;
 
-public class Result<TError, TValue> where TError : Enum
+public class Result<TError, TValue> where TError : struct, Enum where TValue : class
 {
     [JsonPropertyName("error")]
-    private readonly TError? _maybeError;
-    [JsonPropertyName("value")]
-    private readonly TValue? _maybeValue;
+    [JsonInclude]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    private readonly TError? maybeError;
 
+    [JsonPropertyName("value")]
+    [JsonInclude]
+    private readonly TValue? maybeValue;
+    
     [JsonConstructor]
-    private Result(TError? error, TValue? value)
+    private Result(TError? maybeError, TValue? maybeValue)
     {
-        _maybeError = error;
-        _maybeValue = value;
+        this.maybeError = maybeError;
+        this.maybeValue = maybeValue;
     }
 
+    [JsonIgnore] 
+    public bool IsSuccess => maybeValue != null;
+
     [JsonIgnore]
-    public bool IsSuccess => _maybeValue != null;
+    public TValue Value => maybeValue ?? throw new InvalidOperationException("Check for success/failure first!");
 
-    public TValue? Value => _maybeValue;
+    [JsonIgnore]
+    public TError Error => maybeError ?? throw new InvalidOperationException("Check for success/failure first!");
 
-    public TError? Error => _maybeError;
+    public static Result<TError, TValue> Success(TValue value) => new(null, value);
 
-    public static Result<TErr, TVal> Success<TErr, TVal>(TVal value) where TErr : Enum => new(default, value);
-
-    public static Result<TErr, TVal> Failure<TErr, TVal>(TErr errorCode) where TErr : Enum => new(errorCode, default);
+    public static Result<TError, TValue> Failure(TError errorCode) => new(errorCode, null);
 }
 
 public enum RpcError

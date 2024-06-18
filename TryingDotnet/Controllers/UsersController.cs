@@ -12,8 +12,8 @@ public class UserController(IUserService userService) : ControllerBase
     {
         var user = await userService.GetUser(index);
         return user is not null
-            ? Result<RpcError, User>.Success<RpcError, User>(user)
-            : Result<RpcError, User>.Failure<RpcError, User>(RpcError.NotFound);
+            ? Result<RpcError, User>.Success(user)
+            : Result<RpcError, User>.Failure(RpcError.NotFound);
     }
 
     [HttpPost("/api/users/")]
@@ -21,8 +21,8 @@ public class UserController(IUserService userService) : ControllerBase
     {
         return (await userService.AddUser(user))
             .Match(
-                Left: _ => Result<RpcError, User>.Failure<RpcError, User>(RpcError.GeneralError),
-                Right: Result<RpcError, User>.Success<RpcError, User>
+                Left: _ => Result<RpcError, User>.Failure(RpcError.GeneralError),
+                Right: Result<RpcError, User>.Success
             );
     }
 }
