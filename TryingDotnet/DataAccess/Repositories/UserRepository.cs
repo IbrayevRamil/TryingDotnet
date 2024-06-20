@@ -1,62 +1,42 @@
-using System.Data;
 using System.Data.Common;
 using Dapper;
 using LanguageExt;
-using LanguageExt.Common;
-using Npgsql;
-using TryingDotnet.Controllers;
+using TryingDotnet.Api;
 
-namespace TryingDotnet.DataAccess;
+namespace TryingDotnet.DataAccess.Repositories;
 
 public interface IUserRepository
 {
-    Task<Either<UserError, User>> AddUser(User user);
-    Task<User?> GetUser(int index);
+    Task<Either<UserError, User>> AddUser(Guid userId, string username);
+    Task<Either<UserError, User>> GetUser(Guid guid);
 }
 
 public class UserRepository(DbConnection db) : IUserRepository
 {
-    public async Task<Either<UserError, User>> AddUser(User user)
+    public async Task<Either<UserError, User>> AddUser(Guid userId, string username)
     {
-        var inserted = await db.ExecuteAsync(@"
-                INSERT INTO users (username) VALUES (@Username) ON CONFLICT DO NOTHING;
-            ", user);
-        return inserted > 0
+        var user = await db.QuerySingleOrDefaultAsync<User>(@"
+                INSERT INTO users (username, user_id) VALUES (@username, @userId) ON CONFLICT DO NOTHING RETURNING user_id, username;
+            ", new { username, userId });
+        return user is not null
             ? Either<UserError, User>.Right(user)
             : Either<UserError, User>.Left(UserError.GeneralError);
     }
 
-    public Task<User?> GetUser(int id)
+    public async Task<Either<UserError, User>> GetUser(Guid guid)
     {
-        return db.QuerySingleOrDefaultAsync<User>(@"
-                SELECT username FROM users WHERE id = @id
-            ", new { id });
+        var user = await db.QuerySingleOrDefaultAsync<User>(@"
+                SELECT user_id, username FROM users WHERE user_id = @guid
+            ", new { guid });
+        return user is not null
+            ? Either<UserError, User>.Right(user)
+            : Either<UserError, User>.Left(UserError.NotFound);
     }
 }
 
 public enum UserError
 {
     Duplicate,
+    NotFound,
     GeneralError
-}
-
-public static class As
-{
-    public static async Task<Either<K, U>> Map2<T, U, K>(
-        this Task<T> self,
-        Func<T, U> map,
-        Func<Exception, K> ex
-    )
-    {
-        Func<T, U> func = map;
-        try
-        {
-            var self1 = await self;
-            return Either<K, U>.Right(func(self1));
-        }
-        catch (Exception e)
-        {
-            return Either<K, U>.Left(ex(e));
-        }
-    }
 }

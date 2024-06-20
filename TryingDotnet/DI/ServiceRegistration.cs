@@ -1,7 +1,7 @@
 using System.Data.Common;
-using TryingDotnet.DataAccess;
 using Npgsql;
 using TryingDotnet.DataAccess.Outbox;
+using TryingDotnet.DataAccess.Repositories;
 using TryingDotnet.DataAccess.Transaction;
 using TryingDotnet.Events;
 using TryingDotnet.Services;

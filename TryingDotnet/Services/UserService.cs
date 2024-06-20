@@ -1,19 +1,16 @@
-using System.Runtime.InteropServices.JavaScript;
 using System.Text.Json;
-using System.Transactions;
 using LanguageExt;
-using TryingDotnet.Controllers;
-using TryingDotnet.DataAccess;
+using TryingDotnet.Api;
 using TryingDotnet.DataAccess.Outbox;
+using TryingDotnet.DataAccess.Repositories;
 using TryingDotnet.DataAccess.Transaction;
-using TryingDotnet.Events;
 
 namespace TryingDotnet.Services;
 
 public interface IUserService
 {
-    Task<Either<UserError, User>> AddUser(User user);
-    Task<User?> GetUser(int index);
+    Task<Either<UserError, User>> AddUser(string username);
+    Task<Either<UserError, User>> GetUser(Guid guid);
 }
 
 public class UserService(
@@ -22,23 +19,24 @@ public class UserService(
     IUnitOfWork unitOfWork
 ) : IUserService
 {
-    public async Task<Either<UserError, User>> AddUser(User user)
+    public async Task<Either<UserError, User>> AddUser(string username)
     {
+        var userId = Guid.NewGuid();
         return await unitOfWork.Execute(_ =>
-            userRepository.AddUser(user)
+            userRepository.AddUser(userId, username)
                 .BindAsync(async addedUser =>
                     await taskRepository.AddTask(
                         topic: "user",
-                        payload: JsonSerializer.Serialize(user),
-                        correlationId: Guid.NewGuid(),
+                        payload: JsonSerializer.Serialize(addedUser),
+                        correlationId: addedUser.UserId,
                         scheduledAt: DateTimeOffset.Now
                     )
                         ? Either<UserError, User>.Right(addedUser)
                         : Either<UserError, User>.Left(UserError.GeneralError)));
     }
 
-    public Task<User?> GetUser(int index)
+    public Task<Either<UserError, User>> GetUser(Guid guid)
     {
-        return userRepository.GetUser(index);
+        return userRepository.GetUser(guid);
     }
 }
