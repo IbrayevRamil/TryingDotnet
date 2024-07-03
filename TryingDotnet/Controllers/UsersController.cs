@@ -5,7 +5,7 @@ using TryingDotnet.Services;
 
 namespace TryingDotnet.Controllers;
 
-public class UserController(IUserService userService) : ControllerBase
+public class UserController(IUserService userService) : ControllerBase, IUserClient
 {
     [HttpGet("/api/users/{guid:guid}")]
     public async Task<Result<RpcError, User>> Get(Guid guid)

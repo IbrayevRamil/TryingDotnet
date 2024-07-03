@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc.Testing;
+using Refit;
+using TryingDotnet.Api;
 using TryingDotnetTests.DataAccess;
 
 namespace TryingDotnetTests;
@@ -6,15 +8,13 @@ namespace TryingDotnetTests;
 [Collection(nameof(ContainersCollection))]
 public class GenericIntegrationTest
 {
-    protected readonly HttpClient Client;
-    protected readonly IServiceProvider ServiceProvider;
+    protected readonly IUserClient UserClient;
 
     protected GenericIntegrationTest(DatabaseFixture fixture)
     {
         var factory = new WebApplicationFactory<MyProgram>()
             .WithWebHostBuilder(
                 host => host.UseSetting("ConnectionStrings:DefaultConnection", fixture.ConnectionString));
-        ServiceProvider = factory.Services;
-        Client = factory.CreateClient();
+        UserClient = RestService.For<IUserClient>(factory.CreateClient());
     }
 }

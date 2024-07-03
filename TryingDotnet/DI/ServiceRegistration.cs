@@ -25,6 +25,5 @@ public static class ServiceRegistration
     public static void RegisterEvents(this IServiceCollection services)
     {
         services.AddSingleton<IKafkaProducer, KafkaProducer>();
-        services.AddHostedService<UserEventConsumer>();
     }
 }
