@@ -1,12 +1,14 @@
 using TryingDotnet.Api;
 using TryingDotnet.Controllers;
 using TryingDotnetTests.DataAccess;
+using TryingDotnetTests.Events;
 using TryingDotnetTests.Utils;
 
 namespace TryingDotnetTests;
 
-public class UserControllerTests(DatabaseFixture fixture) : GenericIntegrationTest(fixture)
+public class UserControllerTests(DatabaseFixture db, KafkaFixture kafka) : GenericIntegrationTest(db, kafka)
 {
+    
     [Fact]
     public async Task Should_Successfully_Insert_User()
     {
@@ -15,12 +17,16 @@ public class UserControllerTests(DatabaseFixture fixture) : GenericIntegrationTe
         var response = await UserClient.Add(request);
         
         Assert.True(response.IsSuccess);
+        var expectedUser = response.Value with { Username = username };
         var actualUser = response.Value;
-        Assert.Equal(expected: username, actual: actualUser.Username);
+        Assert.Equal(expected: expectedUser, actual: actualUser);
 
         var getUserResponse = await UserClient.Get(response.Value.UserId);
         Assert.True(getUserResponse.IsSuccess);
-        Assert.Equal(expected: username, actual: getUserResponse.Value.Username);
+        Assert.Equal(expected: expectedUser, actual: getUserResponse.Value);
+
+        var producedMessage = UserEventConsumer.Consume(TimeSpan.FromSeconds(5));
+        Assert.Equal(expected: expectedUser, actual: producedMessage);
     }
     
     [Fact]
@@ -29,8 +35,9 @@ public class UserControllerTests(DatabaseFixture fixture) : GenericIntegrationTe
         var username = DataGenerationUtils.GenerateRandomString();
         var request = new AddUserRequest(username);
         var initialResponse = await UserClient.Add(request);
+        var expectedUser = initialResponse.Value with { Username = username };
         var actualUser = initialResponse.Value;
-        Assert.Equal(expected: username, actual: actualUser.Username);
+        Assert.Equal(expected: expectedUser, actual: actualUser);
         
         var response = await UserClient.Add(request);
         Assert.False(response.IsSuccess);

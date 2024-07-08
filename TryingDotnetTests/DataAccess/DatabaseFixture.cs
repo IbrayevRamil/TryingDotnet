@@ -4,11 +4,10 @@ namespace TryingDotnetTests.DataAccess;
 
 public class DatabaseFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder().Build();
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder().WithImage("postgres:16.3").Build();
 
-    public string ConnectionString => container.GetConnectionString();
-    public string ContainerId => $"{container.Id}";
+    public string ConnectionString => _container.GetConnectionString();
 
-    public Task InitializeAsync() => container.StartAsync();
-    public Task DisposeAsync() => container.DisposeAsync().AsTask();
+    public Task InitializeAsync() => _container.StartAsync();
+    public Task DisposeAsync() => _container.DisposeAsync().AsTask();
 }

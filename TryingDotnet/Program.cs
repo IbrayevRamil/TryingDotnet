@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using FluentMigrator.Runner;
 using TryingDotnet.DataAccess.Migrations;
 using TryingDotnet.DI;
+using TryingDotnet.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,7 @@ builder.Services.AddFluentMigratorCore()
     );
 builder.Services.RegisterDataAccess(builder.Configuration);
 builder.Services.RegisterEvents();
+await builder.Services.RegisterTopics(builder.Configuration);
 
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
