@@ -13,7 +13,7 @@ public class UserEventConsumer
         var config = new ConsumerConfig
         {
             BootstrapServers = bootstrapServers,
-            GroupId = "UserConsumerGroup",
+            GroupId = "TryingDotnetConsumerGroup",
             AutoOffsetReset = AutoOffsetReset.Earliest
         };
 

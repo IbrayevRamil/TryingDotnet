@@ -1,5 +1,11 @@
 using System.Text.Json.Serialization;
 using FluentMigrator.Runner;
+using Npgsql;
+using OpenTelemetry;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using TryingDotnet.DataAccess.Migrations;
 using TryingDotnet.DI;
 using TryingDotnet.Events;
@@ -20,6 +26,23 @@ builder.Services.AddFluentMigratorCore()
             typeof(AddGuidColumn).Assembly
         ).For.Migrations()
     );
+builder.Services
+    .AddOpenTelemetry()
+    .UseOtlpExporter(protocol: OtlpExportProtocol.Grpc, baseUrl: new Uri("http://localhost:4317"))
+    .ConfigureResource(resource => resource.AddService("TryingDotnet"))
+    .WithMetrics(metrics =>
+        metrics
+            //.AddConsoleExporter()
+            .AddAspNetCoreInstrumentation()
+            .AddMeter("Npgsql")
+    )
+    .WithTracing(tracing =>
+        tracing
+            //.AddConsoleExporter()
+            .AddAspNetCoreInstrumentation()
+            .AddNpgsql()
+    )
+    .WithLogging(_ => {});
 builder.Services.RegisterDataAccess(builder.Configuration);
 builder.Services.RegisterEvents();
 await builder.Services.RegisterTopics(builder.Configuration);
